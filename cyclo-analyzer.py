@@ -6,7 +6,9 @@ import csv
 import gpxpy
 import statistics
 import datetime
+import calendar
 import pandas as pd
+import numpy as np
 import seaborn
 import matplotlib.pyplot as plt
 from activity import Activity, create_activity
@@ -33,6 +35,12 @@ def main():
     asot_command = subparsers.add_parser("asot")
     asot_command.set_defaults(func=average_speed_over_activities)
 
+    ets_command = subparsers.add_parser("ets")
+    ets_command.set_defaults(func=elevation_time_speed)
+
+    adow_command = subparsers.add_parser("adow")
+    adow_command.set_defaults(func=average_distance_over_weekday)
+
     arguments = parser.parse_args()
     if hasattr(arguments, "func"):
         arguments.func(arguments)
@@ -40,12 +48,56 @@ def main():
         parser.print_help()
 
 
-def average_speed_over_activities(arguments):
+def average_distance_over_weekday(arguments):
+    activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+
+    weekdays_by_index = dict(zip(range(7), calendar.day_name))
+    distances_by_index = dict(zip(range(7), [[] for x in range(7)]))
+    for activity in rides:
+        activity_datetime = datetime.datetime.strptime(activity.date, "%b %d, %Y, %I:%M:%S %p")
+        distances_by_index[activity_datetime.weekday()].append(float(activity.distance) * 0.000621371)
+
+    average_distances = [statistics.mean(weekday_distances) for index, weekday_distances in distances_by_index.items()]
+
+    adow_df = pd.DataFrame(data={
+        "weekday": [weekdays_by_index[index] for index, distance in enumerate(average_distances)],
+        "distances": average_distances
+    })
+    print(adow_df)
+    adow_plot = seaborn.barplot(x="weekday", y="distances", data=adow_df)
+    adow_plot.set(xlabel="Day of Week", ylabel="Average Distance (miles)")
+    plt.savefig("adow.png")
+    plt.show()
+
+
+def elevation_time_speed(arguments):
     activities = parse_activities_csv()
 
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    print("Filtered {} activities down to {} Ride activities".format(len(activities), len(rides)))
+
+    ets_df = pd.DataFrame(data={
+        "elevation": [float(activity.elevation_gain) for activity in rides],
+        "moving_time": [float(activity.moving_time) / 60 for activity in rides],
+        "average_speed": [float(activity.average_speed) * 2.237 if activity.average_speed else 0 for activity in rides]
+    })
+    ets_pivot = pd.pivot_table(ets_df, index="elevation", columns="moving_time", values="average_speed", aggfunc=np.average)
+    f, ax = plt.subplots(figsize=(9, 6))
+    ets_plot = seaborn.heatmap(ets_pivot, annot=True, linewidths=0.5, ax=ax)
+    plt.savefig("ets.png")
+    plt.show()
+
+
+def average_speed_over_activities(arguments):
+    activities = parse_activities_csv()
+    
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    print("Filtered {} activities down to {} Ride activities".format(len(activities), len(rides)))
+
     asot_df = pd.DataFrame(data={
-        "activity_date": [datetime.datetime.strptime(activity.date, "%b %d, %Y, %I:%M:%S %p") for activity in activities],
-        "average_speed": [float(activity.average_speed) if activity.average_speed else 0 for activity in activities]
+        "activity_date": [datetime.datetime.strptime(activity.date, "%b %d, %Y, %I:%M:%S %p") for activity in rides],
+        "average_speed": [float(activity.average_speed) * 2.237 if activity.average_speed else 0 for activity in rides]
     })
     asot_plot = seaborn.lineplot(x="activity_date", y="average_speed", data=asot_df)
     asot_plot.set(xlabel="Date", ylabel="Average Speed (mph)")
