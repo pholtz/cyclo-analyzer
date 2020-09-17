@@ -25,6 +25,9 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='reports', description='available reports', help='')
 
+    baseline_command = subparsers.add_parser("baseline")
+    baseline_command.set_defaults(func=baseline)
+
     dot_command = subparsers.add_parser("dot")
     dot_command.set_defaults(func=distance_over_time)
 
@@ -46,6 +49,33 @@ def main():
         arguments.func(arguments)
     else:
         parser.print_help()
+
+
+def baseline(arguments):
+    activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    
+    first_datetime = datetime.datetime.strptime(rides[0].date, "%b %d, %Y, %I:%M:%S %p")
+    last_datetime = datetime.datetime.strptime(rides[-1].date, "%b %d, %Y, %I:%M:%S %p")
+    
+    min_distance_ride = min(rides, key=lambda x: float(x.distance) * 0.000621371)
+    max_distance_ride = max(rides, key=lambda x: float(x.distance) * 0.000621371)
+    min_distance = round(float(min_distance_ride.distance) * 0.000621371, 2)
+    max_distance = round(float(max_distance_ride.distance) * 0.000621371, 2)
+    average_distance_meters = statistics.mean([float(activity.distance) for activity in activities])
+    average_distance_miles = round(average_distance_meters * 0.000621371, 2)
+
+    min_elevation_ride = min(rides, key=lambda x: float(x.elevation_gain))
+    max_elevation_ride = max(rides, key=lambda x: float(x.elevation_gain))
+    min_elevation_feet = round(float(min_elevation_ride.elevation_gain) * 3.28084, 2)
+    max_elevation_feet = round(float(max_elevation_ride.elevation_gain) * 3.28084, 2)
+    average_elevation = statistics.mean([float(activity.elevation_gain) for activity in activities])
+    average_elevation_feet = round(average_elevation * 3.28084, 2)
+
+    print("Ride Count: {}".format(len(rides)))
+    print("Date Range: {} - {}".format(first_datetime.strftime("%b %d %Y"), last_datetime.strftime("%b %d %Y")))
+    print("Distances: {} (min) {} (max) {} (avg) miles".format(min_distance, max_distance, average_distance_miles))
+    print("Elevations: {} (min) {} (max) {} (avg) feet".format(min_elevation_feet, max_elevation_feet, average_elevation_feet))
 
 
 def average_distance_over_weekday(arguments):
