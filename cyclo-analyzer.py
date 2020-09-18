@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import argparse
 import csv
 import gpxpy
@@ -20,6 +21,7 @@ from activity import Activity, create_activity
 # You could just take the data export that strava offers as input
 # And provide riders aggregated metrics from the .csv and .gpx data instead
 
+# {'activity_id': '2943975776', 'date': 'Dec 19, 2019, 10:32:35 PM', 'name': 'After work after dark quickie', 'activity_type': 'Ride', 'elapsed_time': '1044.0', 'distance': '4058.0', 'filename': 'activities/2943975776.gpx', 'moving_time': '925.0', 'max_speed': '10.0', 'average_speed': '4.387027263641357', 'elevation_gain': '59.79328918457031', 'elevation_low': '115.5', 'elevation_high': '143.3000030517578', 'max_grade': '16.299999237060547', 'average_grade': '0.004928536247462034', 'perceived_exertion': '', 'perceived_relative_effort': ''}
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,7 +56,7 @@ def main():
 def baseline(arguments):
     activities = parse_activities_csv()
     rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    
+
     first_datetime = datetime.datetime.strptime(rides[0].date, "%b %d, %Y, %I:%M:%S %p")
     last_datetime = datetime.datetime.strptime(rides[-1].date, "%b %d, %Y, %I:%M:%S %p")
     
@@ -62,20 +64,46 @@ def baseline(arguments):
     max_distance_ride = max(rides, key=lambda x: float(x.distance) * 0.000621371)
     min_distance = round(float(min_distance_ride.distance) * 0.000621371, 2)
     max_distance = round(float(max_distance_ride.distance) * 0.000621371, 2)
-    average_distance_meters = statistics.mean([float(activity.distance) for activity in activities])
+    average_distance_meters = statistics.mean([float(activity.distance) for activity in rides])
     average_distance_miles = round(average_distance_meters * 0.000621371, 2)
 
     min_elevation_ride = min(rides, key=lambda x: float(x.elevation_gain))
     max_elevation_ride = max(rides, key=lambda x: float(x.elevation_gain))
     min_elevation_feet = round(float(min_elevation_ride.elevation_gain) * 3.28084, 2)
     max_elevation_feet = round(float(max_elevation_ride.elevation_gain) * 3.28084, 2)
-    average_elevation = statistics.mean([float(activity.elevation_gain) for activity in activities])
+    average_elevation = statistics.mean([float(activity.elevation_gain) for activity in rides])
     average_elevation_feet = round(average_elevation * 3.28084, 2)
+
+    min_time_ride = min(rides, key=lambda x: float(x.moving_time))
+    max_time_ride = max(rides, key=lambda x: float(x.moving_time))
+    average_time = statistics.mean([float(ride.moving_time) for ride in rides])
+    min_time_minutes = round(float(min_time_ride.moving_time) / 60, 2)
+    max_time_minutes = round(float(max_time_ride.moving_time) / 60, 2)
+    average_time_minutes = round(average_time / 60, 2)
+
+    total_distance_meters = 0
+    total_elevation_meters = 0
+    total_time_seconds = 0
+    
+    for ride in rides:
+        total_distance_meters += float(ride.distance)
+        total_elevation_meters += float(ride.elevation_gain)
+        total_time_seconds += float(ride.moving_time)
+
+    total_distance_miles = round(total_distance_meters * 0.000621371, 2)
+    total_elevation_feet = round(total_elevation_meters * 3.28084, 2)
+    total_time_hours = round(total_time_seconds / 3600, 2)
 
     print("Ride Count: {}".format(len(rides)))
     print("Date Range: {} - {}".format(first_datetime.strftime("%b %d %Y"), last_datetime.strftime("%b %d %Y")))
+    print("\n{}\n".format("=" * 30))
     print("Distances: {} (min) {} (max) {} (avg) miles".format(min_distance, max_distance, average_distance_miles))
-    print("Elevations: {} (min) {} (max) {} (avg) feet".format(min_elevation_feet, max_elevation_feet, average_elevation_feet))
+    print("Elevation: {} (min) {} (max) {} (avg) feet".format(min_elevation_feet, max_elevation_feet, average_elevation_feet))
+    print("Moving Time: {} (min) {} (max) {} (avg) minutes".format(min_time_minutes, max_time_minutes, average_time_minutes))
+    print("\n{}\n".format("=" * 30))
+    print("Total Distance: {} miles".format(total_distance_miles))
+    print("Total Elevation Gain: {} feet".format(total_elevation_feet))
+    print("Total Time: {} hours".format(total_time_hours))
 
 
 def average_distance_over_weekday(arguments):
