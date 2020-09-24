@@ -25,7 +25,9 @@ from activity import Activity, create_activity
 
 def main():
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(title='reports', description='available reports', help='')
+    subparsers = parser.add_subparsers(title='reports',
+        description='available reports',
+        help='')
 
     baseline_command = subparsers.add_parser("baseline")
     baseline_command.set_defaults(func=baseline)
@@ -59,51 +61,74 @@ def baseline(arguments):
 
     first_datetime = datetime.datetime.strptime(rides[0].date, "%b %d, %Y, %I:%M:%S %p")
     last_datetime = datetime.datetime.strptime(rides[-1].date, "%b %d, %Y, %I:%M:%S %p")
+
+    ride_names = [ride.name for ride in rides]
+    ride_dates = [datetime.datetime.strptime(ride.date, "%b %d, %Y, %I:%M:%S %p") for ride in rides]
+    date_df = pd.DataFrame(data={
+        "name": ride_names,
+        "date": ride_dates
+    })
+    rides_by_week = date_df.groupby(pd.Grouper(key="date", freq="W"))
+    average_rides_per_week = statistics.mean([len(weekly_rides[1]) for weekly_rides in rides_by_week])
     
-    min_distance_ride = min(rides, key=lambda x: float(x.distance) * 0.000621371)
-    max_distance_ride = max(rides, key=lambda x: float(x.distance) * 0.000621371)
-    min_distance = round(float(min_distance_ride.distance) * 0.000621371, 2)
-    max_distance = round(float(max_distance_ride.distance) * 0.000621371, 2)
-    average_distance_meters = statistics.mean([float(activity.distance) for activity in rides])
-    average_distance_miles = round(average_distance_meters * 0.000621371, 2)
+    min_distance = None
+    min_elevation = None
+    min_time = None
+    max_distance = None
+    max_elevation = None
+    max_time = None
+    total_distance = 0
+    total_elevation = 0
+    total_time = 0
 
-    min_elevation_ride = min(rides, key=lambda x: float(x.elevation_gain))
-    max_elevation_ride = max(rides, key=lambda x: float(x.elevation_gain))
-    min_elevation_feet = round(float(min_elevation_ride.elevation_gain) * 3.28084, 2)
-    max_elevation_feet = round(float(max_elevation_ride.elevation_gain) * 3.28084, 2)
-    average_elevation = statistics.mean([float(activity.elevation_gain) for activity in rides])
-    average_elevation_feet = round(average_elevation * 3.28084, 2)
-
-    min_time_ride = min(rides, key=lambda x: float(x.moving_time))
-    max_time_ride = max(rides, key=lambda x: float(x.moving_time))
-    average_time = statistics.mean([float(ride.moving_time) for ride in rides])
-    min_time_minutes = round(float(min_time_ride.moving_time) / 60, 2)
-    max_time_minutes = round(float(max_time_ride.moving_time) / 60, 2)
-    average_time_minutes = round(average_time / 60, 2)
-
-    total_distance_meters = 0
-    total_elevation_meters = 0
-    total_time_seconds = 0
-    
     for ride in rides:
-        total_distance_meters += float(ride.distance)
-        total_elevation_meters += float(ride.elevation_gain)
-        total_time_seconds += float(ride.moving_time)
+        distance = float(ride.distance)
+        elevation = float(ride.elevation_gain)
+        moving_time = float(ride.moving_time)
+        if not min_distance or distance < min_distance:
+            min_distance = distance
+        if not max_distance or distance > max_distance:
+            max_distance = distance
+        if not min_elevation or elevation < min_elevation:
+            min_elevation = elevation
+        if not max_elevation or elevation > max_elevation:
+            max_elevation = elevation
+        if not min_time or moving_time < min_time:
+            min_time = moving_time
+        if not max_time or moving_time > max_time:
+            max_time = moving_time
+        total_distance += distance
+        total_elevation += elevation
+        total_time += moving_time
 
-    total_distance_miles = round(total_distance_meters * 0.000621371, 2)
-    total_elevation_feet = round(total_elevation_meters * 3.28084, 2)
-    total_time_hours = round(total_time_seconds / 3600, 2)
+    min_distance_miles = round(min_distance * 0.000621371, 2)
+    max_distance_miles = round(max_distance * 0.000621371, 2)
+    average_distance_miles = round(total_distance / len(rides) * 0.000621371, 2)
+
+    min_elevation_feet = round(min_elevation * 3.28084, 2)
+    max_elevation_feet = round(max_elevation * 3.28084, 2)
+    average_elevation_feet = round(total_elevation / len(rides) * 3.28084, 2)
+
+    min_time_minutes = round(min_time / 60, 2)
+    max_time_minutes = round(max_time / 60, 2)
+    average_time_minutes = round(total_time / len(rides) / 60, 2)
+
+    total_distance_miles = round(total_time * 0.000621371, 2)
+    total_elevation_feet = round(total_elevation * 3.28084, 2)
+    total_time_hours = round(total_time / 3600, 2)
 
     print("Ride Count: {}".format(len(rides)))
     print("Date Range: {} - {}".format(first_datetime.strftime("%b %d %Y"), last_datetime.strftime("%b %d %Y")))
     print("\n{}\n".format("=" * 30))
-    print("Distances: {} (min) {} (max) {} (avg) miles".format(min_distance, max_distance, average_distance_miles))
+    print("Distances: {} (min) {} (max) {} (avg) miles".format(min_distance_miles, max_distance_miles, average_distance_miles))
     print("Elevation: {} (min) {} (max) {} (avg) feet".format(min_elevation_feet, max_elevation_feet, average_elevation_feet))
     print("Moving Time: {} (min) {} (max) {} (avg) minutes".format(min_time_minutes, max_time_minutes, average_time_minutes))
     print("\n{}\n".format("=" * 30))
     print("Total Distance: {} miles".format(total_distance_miles))
     print("Total Elevation Gain: {} feet".format(total_elevation_feet))
     print("Total Time: {} hours".format(total_time_hours))
+    print("\n{}\n".format("=" * 30))
+    print("Average Rides Per Week: {}".format(average_rides_per_week))
 
 
 def average_distance_over_weekday(arguments):
