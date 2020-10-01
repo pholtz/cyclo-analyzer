@@ -28,18 +28,30 @@ def main():
     parser = argparse.ArgumentParser(description=textwrap.dedent(
         """\
         Analyze a provided activities archive.
-        Note: Currently supports only strava activity extracts.
+        Note: Currently supports only strava activity extracts. 
         """))
     subparsers = parser.add_subparsers(title="reports",
         description="available reports",
         help="")
 
-    ### Aggregated Metrics ###
-    baseline_command = subparsers.add_parser("stats",
+    ### Statistics ###
+    stats_command = subparsers.add_parser("stats",
         aliases=["statistics", "baseline"],
         help="Print a textual report of aggregated data scraped from the activity file")
-    baseline_command.set_defaults(func=stats)
+    stats_command.set_defaults(func=stats)
 
+    ### Single Ride Metrics ###
+    elevation_command = subparsers.add_parser("elevation",
+        help="Plot elevation as a function of time for a single ride (area)")
+    elevation_command.add_argument("--date", help="search and report activities on this date")
+    elevation_command.set_defaults(func=elevation_over_time)
+
+    speed_command = subparsers.add_parser("speed",
+        help="Plot speed as a function of time for a single ride (area)")
+    speed_command.add_argument("--date", help="search and report activities on this date")
+    speed_command.set_defaults(func=speed_over_time)
+
+    ### Aggregated Metrics ###
     dot_command = subparsers.add_parser("dot",
         help="Plot distance as a function of moving time (scatter)")
     dot_command.set_defaults(func=distance_over_time)
@@ -55,17 +67,6 @@ def main():
     adow_command = subparsers.add_parser("adow",
         help="Plot average distances for each day of the week (bar)")
     adow_command.set_defaults(func=average_distance_over_weekday)
-
-    ### Single Ride Metrics ###
-    elevation_command = subparsers.add_parser("elevation",
-        help="Plot elevation as a function of time for a single ride (area)")
-    elevation_command.add_argument("--date", help="search and report activities on this date")
-    elevation_command.set_defaults(func=elevation_over_time)
-
-    speed_command = subparsers.add_parser("speed",
-        help="Plot speed as a function of time for a single ride (area)")
-    speed_command.add_argument("--date", help="search and report activities on this date")
-    speed_command.set_defaults(func=speed_over_time)
 
     ### Miscellaneous ###
     dump_command = subparsers.add_parser("dump",
@@ -194,6 +195,88 @@ def stats(arguments):
     print("Moving Time: {} (min) {} (max) {} (avg) minutes".format(min_time_minutes, max_time_minutes, average_time_minutes))
 
 
+def speed_over_time(arguments):
+    activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    rides = [ride.convert_to_imperial() for ride in rides]
+
+    selected_activity = rides[0]
+    if arguments.date:
+        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
+        for ride in rides:
+            if desired_datetime.year == ride.date.year and \
+                    desired_datetime.month == ride.date.month and \
+                    desired_datetime.day == ride.date.day:
+                selected_activity = activity
+                break
+
+    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
+    with open("export/" + selected_activity.filename, "r") as gpx_file:
+        gpx = gpxpy.parse(gpx_file)
+
+    trackpoints = []
+    times_and_speeds = []
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for index, point in enumerate(segment.points):
+                time = datetime.datetime.fromisoformat(point.time.isoformat())
+                speed = 0
+                if index < len(segment.points) - 1:
+                    speed = point.speed_between(segment.points[index + 1])
+                times_and_speeds.append((time, speed * 2.23694))
+
+    speed_dataframe = pd.DataFrame(data={
+        "datetime": [point[0] for point in times_and_speeds],
+        "speed": [point[1] for point in times_and_speeds]
+    })
+    speed_dataframe["bin_speed"] = speed_dataframe.rolling(window=10).mean()
+
+    avg_palette = seaborn.color_palette("rocket")
+    avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe, palette=avg_palette)
+    avg_plot.set(xlabel="Time", ylabel="Speed (meters / second)")
+    
+    # plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.speed.values)
+    plt.savefig("speed.png")
+    plt.show()
+
+
+def elevation_over_time(arguments):
+    activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    rides = [ride.convert_to_imperial() for ride in rides]
+
+    selected_activity = rides[0]
+    if arguments.date:
+        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
+        for ride in rides:
+            if desired_datetime.year == ride.date.year and \
+                    desired_datetime.month == ride.date.month and \
+                    desired_datetime.day == ride.date.day:
+                selected_activity = ride
+                break
+
+    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
+    with open("export/" + selected_activity.filename, "r") as gpx_file:
+        gpx = gpxpy.parse(gpx_file)
+
+    trackpoints = []
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                trackpoints.append((datetime.datetime.fromisoformat(point.time.isoformat()), point.elevation))
+
+    elevation_dataframe = pd.DataFrame(data={
+        "datetime": [point[0] for point in trackpoints],
+        "elevation": [point[1] for point in trackpoints]
+    })
+    elevation_plot = seaborn.lineplot(
+        x="datetime", y="elevation", data=elevation_dataframe)
+    elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
+    plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
+    plt.savefig("elevation.png")
+    plt.show()
+
+
 def average_distance_over_weekday(arguments):
     activities = parse_activities_csv()
     rides = [activity for activity in activities if activity.activity_type == "Ride"]
@@ -237,101 +320,17 @@ def elevation_time_speed(arguments):
 
 def average_speed_over_activities(arguments):
     activities = parse_activities_csv()
-    
     rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    print("Filtered {} activities down to {} Ride activities".format(len(activities), len(rides)))
+    rides = [ride.convert_to_imperial() for ride in rides]
 
     asot_df = pd.DataFrame(data={
-        "activity_date": [datetime.datetime.strptime(activity.date, "%b %d, %Y, %I:%M:%S %p") for activity in rides],
+        "activity_date": [activity.date for activity in rides],
         "average_speed": [float(activity.average_speed) * 2.237 if activity.average_speed else 0 for activity in rides]
     })
     asot_plot = seaborn.lineplot(x="activity_date", y="average_speed", data=asot_df)
     asot_plot.set(xlabel="Date", ylabel="Average Speed (mph)")
     plt.fill_between(asot_df.activity_date.values, asot_df.average_speed.values)
     plt.savefig("asot.png")
-    plt.show()
-
-
-# TODO: Compare elevations across activities
-def elevation_over_time(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
-
-    selected_activity = rides[0]
-    if arguments.date:
-        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
-        for ride in rides:
-            if desired_datetime.year == ride.date.year and \
-                    desired_datetime.month == ride.date.month and \
-                    desired_datetime.day == ride.date.day:
-                selected_activity = ride
-                break
-
-    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
-    with open("export/" + selected_activity.filename, "r") as gpx_file:
-        gpx = gpxpy.parse(gpx_file)
-
-    trackpoints = []
-    for track in gpx.tracks:
-        for segment in track.segments:
-            for point in segment.points:
-                trackpoints.append((datetime.datetime.fromisoformat(point.time.isoformat()), point.elevation))
-
-    elevation_dataframe = pd.DataFrame(data={
-        "datetime": [point[0] for point in trackpoints],
-        "elevation": [point[1] for point in trackpoints]
-    })
-    elevation_plot = seaborn.lineplot(
-        x="datetime", y="elevation", data=elevation_dataframe)
-    elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
-    plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
-    plt.savefig("elevation.png")
-    plt.show()
-
-
-def speed_over_time(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
-
-    selected_activity = rides[0]
-    if arguments.date:
-        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
-        for ride in rides:
-            if desired_datetime.year == ride.date.year and \
-                    desired_datetime.month == ride.date.month and \
-                    desired_datetime.day == ride.date.day:
-                selected_activity = activity
-                break
-
-    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
-    with open("export/" + selected_activity.filename, "r") as gpx_file:
-        gpx = gpxpy.parse(gpx_file)
-
-    trackpoints = []
-    times_and_speeds = []
-    for track in gpx.tracks:
-        for segment in track.segments:
-            for index, point in enumerate(segment.points):
-                time = datetime.datetime.fromisoformat(point.time.isoformat())
-                speed = 0
-                if index < len(segment.points) - 1:
-                    speed = point.speed_between(segment.points[index + 1])
-                times_and_speeds.append((time, speed * 2.23694))
-
-    speed_dataframe = pd.DataFrame(data={
-        "datetime": [point[0] for point in times_and_speeds],
-        "speed": [point[1] for point in times_and_speeds]
-    })
-    speed_dataframe["bin_speed"] = speed_dataframe.rolling(window=10).mean()
-
-    avg_palette = seaborn.color_palette("rocket")
-    avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe, palette=avg_palette)
-    avg_plot.set(xlabel="Time", ylabel="Speed (meters / second)")
-    
-    # plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.speed.values)
-    plt.savefig("speed.png")
     plt.show()
 
 
