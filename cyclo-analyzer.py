@@ -61,6 +61,11 @@ def main():
     elevation_command.add_argument("--date", help="search and report activities on this date")
     elevation_command.set_defaults(func=elevation_over_time)
 
+    speed_command = subparsers.add_parser("speed",
+        help="Plot speed as a function of time for a single ride (area)")
+    speed_command.add_argument("--date", help="search and report activities on this date")
+    speed_command.set_defaults(func=speed_over_time)
+
     ### Miscellaneous ###
     dump_command = subparsers.add_parser("dump",
         help="Applies a specified transform to the activities file, for readability or compatibility with another system")
@@ -208,16 +213,17 @@ def average_speed_over_activities(arguments):
 # TODO: Compare elevations across activities
 def elevation_over_time(arguments):
     activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    rides = [ride.convert_to_imperial() for ride in rides]
 
-    selected_activity = activities[0]
+    selected_activity = rides[0]
     if arguments.date:
         desired_datetime = datetime.datetime.fromisoformat(arguments.date)
-        for activity in activities:
-            activity_datetime = datetime.datetime.strptime(activity.date, "%b %d, %Y, %I:%M:%S %p")
-            if desired_datetime.year == activity_datetime.year and \
-                    desired_datetime.month == activity_datetime.month and \
-                    desired_datetime.day == activity_datetime.day:
-                selected_activity = activity
+        for ride in rides:
+            if desired_datetime.year == ride.date.year and \
+                    desired_datetime.month == ride.date.month and \
+                    desired_datetime.day == ride.date.day:
+                selected_activity = ride
                 break
 
     print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
@@ -239,6 +245,51 @@ def elevation_over_time(arguments):
     elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
     plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
     plt.savefig("elevation.png")
+    plt.show()
+
+
+def speed_over_time(arguments):
+    activities = parse_activities_csv()
+    rides = [activity for activity in activities if activity.activity_type == "Ride"]
+    rides = [ride.convert_to_imperial() for ride in rides]
+
+    selected_activity = rides[0]
+    if arguments.date:
+        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
+        for ride in rides:
+            if desired_datetime.year == ride.date.year and \
+                    desired_datetime.month == ride.date.month and \
+                    desired_datetime.day == ride.date.day:
+                selected_activity = activity
+                break
+
+    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
+    with open("export/" + selected_activity.filename, "r") as gpx_file:
+        gpx = gpxpy.parse(gpx_file)
+
+    trackpoints = []
+    times_and_speeds = []
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for index, point in enumerate(segment.points):
+                time = datetime.datetime.fromisoformat(point.time.isoformat())
+                speed = 0
+                if index < len(segment.points) - 1:
+                    speed = point.speed_between(segment.points[index + 1])
+                times_and_speeds.append((time, speed * 2.23694))
+
+    speed_dataframe = pd.DataFrame(data={
+        "datetime": [point[0] for point in times_and_speeds],
+        "speed": [point[1] for point in times_and_speeds]
+    })
+    speed_dataframe["bin_speed"] = speed_dataframe.rolling(window=10).mean()
+
+    avg_palette = seaborn.color_palette("rocket")
+    avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe, palette=avg_palette)
+    avg_plot.set(xlabel="Time", ylabel="Speed (meters / second)")
+    
+    # plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.speed.values)
+    plt.savefig("speed.png")
     plt.show()
 
 
@@ -296,6 +347,11 @@ def parse_activities_json():
     for activity in activities:
         print("{} -> {} total meters, {} moving seconds, {} elevation meters".format(
             activity["name"], activity["distance"], activity["moving_time"], activity["total_elevation_gain"]))
+
+
+def the_cooler_dump(obj):
+    for attr in dir(obj):
+        print("obj.%s = %r" % (attr, getattr(obj, attr)))
 
 
 if __name__ == '__main__':
