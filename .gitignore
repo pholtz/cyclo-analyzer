@@ -2,6 +2,7 @@
 export/
 export.zip
 *.png
+*.svg
 activities.json
 .DS_Store
 
