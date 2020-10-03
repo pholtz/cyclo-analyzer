@@ -1,5 +1,5 @@
 # cyclo-analyzer
-Provides aggregated metrics in the form of visuals and reports using bulk exports as a data source.
+Provides activity metrics in the form of visuals and reports using bulk exports as a data source.
 
 ## Usage
 Invoking the below command with no arguments or `-h` supplied will yield a list of subcommands and the purpose they serve.
