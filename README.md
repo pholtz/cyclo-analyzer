@@ -5,7 +5,7 @@ Provides activity metrics in the form of visuals and reports using bulk exports 
 Invoking the below command with no arguments or `-h` supplied will yield a list of subcommands and the purpose they serve.
 
 ```
-$ python cyclo-analyer.py
+$ python cyclo-analyzer.py
 ```
 
 Broadly speaking, the subcommands can be divided into 3 categories.
