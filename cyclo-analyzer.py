@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 import argparse
 import csv
@@ -13,16 +14,9 @@ import numpy as np
 import seaborn
 import matplotlib.pyplot as plt
 import textwrap
-from activity import Activity, create_activity
-
-# Yeah, you could hit the api for everything
-# You'd have to deal with oauth
-# You'd also have to deal with rate limiting
-# OR
-# You could just take the data export that strava offers as input
-# And provide riders aggregated metrics from the .csv and .gpx data instead
-
-# {'activity_id': '2943975776', 'date': 'Dec 19, 2019, 10:32:35 PM', 'name': 'After work after dark quickie', 'activity_type': 'Ride', 'elapsed_time': '1044.0', 'distance': '4058.0', 'filename': 'activities/2943975776.gpx', 'moving_time': '925.0', 'max_speed': '10.0', 'average_speed': '4.387027263641357', 'elevation_gain': '59.79328918457031', 'elevation_low': '115.5', 'elevation_high': '143.3000030517578', 'max_grade': '16.299999237060547', 'average_grade': '0.004928536247462034', 'perceived_exertion': '', 'perceived_relative_effort': ''}
+import pathlib
+from activity import Activity, create_activity, parse_activities_csv
+from baseline import stats
 
 def main():
     parser = argparse.ArgumentParser(description=textwrap.dedent(
@@ -36,7 +30,7 @@ def main():
 
     ### Statistics ###
     stats_command = subparsers.add_parser("stats",
-        aliases=["statistics", "baseline"],
+        aliases=["stat", "statistics", "baseline"],
         help="Print a textual report of aggregated data scraped from the activity file")
     stats_command.set_defaults(func=stats)
 
@@ -88,121 +82,6 @@ def main():
         parser.print_help()
 
 
-def stats(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
-
-    current_datetime = datetime.datetime.now()
-    first_datetime = rides[0].date
-    last_datetime = rides[-1].date
-
-    ride_names = [ride.name for ride in rides]
-    ride_dates = [ride.date for ride in rides]
-    ride_moving_times = [ride.moving_time for ride in rides]
-    ride_distances = [ride.distance for ride in rides]
-    date_df = pd.DataFrame(data={
-        "name": ride_names,
-        "date": ride_dates,
-        "moving_time": ride_moving_times,
-        "distance": ride_distances
-    })
-    rides_by_week = date_df.groupby(pd.Grouper(key="date", freq="W"))
-    average_rides_per_week = round(statistics.mean([len(weekly_rides[1]) for weekly_rides in rides_by_week]), 2)
-    average_time_per_week = round(statistics.mean([sum(weekly_rides[1]["moving_time"] / 60) for weekly_rides in rides_by_week]), 2)
-    average_distance_per_week = round(statistics.mean([sum(weekly_rides[1]["distance"]) for weekly_rides in rides_by_week]), 2)
-    
-    min_distance = None
-    min_elevation = None
-    min_time = None
-    max_distance = None
-    max_elevation = None
-    max_time = None
-    total_distance = 0
-    total_elevation = 0
-    total_time = 0
-    ytd_rides = 0
-    ytd_distance = 0
-    ytd_elevation = 0
-    ytd_time = 0
-
-    for ride in rides:
-        if not min_distance or ride.distance < min_distance:
-            min_distance = ride.distance
-        if not max_distance or ride.distance > max_distance:
-            max_distance = ride.distance
-        if not min_elevation or ride.elevation_gain < min_elevation:
-            min_elevation = ride.elevation_gain
-        if not max_elevation or ride.elevation_gain > max_elevation:
-            max_elevation = ride.elevation_gain
-        if not min_time or ride.moving_time < min_time:
-            min_time = ride.moving_time
-        if not max_time or ride.moving_time > max_time:
-            max_time = ride.moving_time
-        total_distance += ride.distance
-        total_elevation += ride.elevation_gain
-        total_time += ride.moving_time
-        if ride.date.year == current_datetime.year:
-            ytd_rides += 1
-            ytd_distance += ride.distance
-            ytd_elevation += ride.elevation_gain
-            ytd_time += ride.moving_time
-
-    min_distance = round(min_distance, 2)
-    max_distance = round(max_distance, 2)
-    average_distance = round(total_distance / len(rides), 2)
-
-    min_elevation = round(min_elevation, 2)
-    max_elevation = round(max_elevation, 2)
-    average_elevation = round(total_elevation / len(rides), 2)
-
-    min_time_minutes = round(min_time / 60, 2)
-    max_time_minutes = round(max_time / 60, 2)
-    average_time_minutes = round(total_time / len(rides) / 60, 2)
-
-    total_distance = round(total_distance, 2)
-    total_elevation = round(total_elevation, 2)
-    total_time_hours = round(total_time / 3600, 2)
-
-    ytd_distance = round(ytd_distance, 2)
-    ytd_elevation = round(ytd_elevation, 2)
-    ytd_time_hours = round(ytd_time / 3600, 2)
-
-    print(textwrap.dedent("""\
-    ###########
-    # Overall #
-    ###########
-    Average Rides Per Week: {}
-    Average Time Per Week: {} minutes
-    Average Distance Per Week: {} miles
-    """.format(average_rides_per_week, average_time_per_week, average_distance_per_week)))
-
-    print(textwrap.dedent("""\
-    ################
-    # Year To Date #
-    ################
-    Rides: {}
-    Time: {} hours
-    Distance: {} miles
-    Elevation Gain: {} feet
-    """.format(ytd_rides, ytd_time_hours, ytd_distance, ytd_elevation)))
-
-    print(textwrap.dedent("""\
-    ############
-    # All Time #
-    ############
-    Rides: {}
-    Time: {} hours
-    Distance: {} miles
-    Elevation Gain: {} feet
-    """.format(len(rides), total_time_hours, total_distance, total_elevation)))
-
-    print("Date Range: {} - {}".format(first_datetime.strftime("%b %d %Y"), last_datetime.strftime("%b %d %Y")))
-    print("Distances: {} (min) {} (max) {} (avg) miles".format(min_distance, max_distance, average_distance))
-    print("Elevation: {} (min) {} (max) {} (avg) feet".format(min_elevation, max_elevation, average_elevation))
-    print("Moving Time: {} (min) {} (max) {} (avg) minutes".format(min_time_minutes, max_time_minutes, average_time_minutes))
-
-
 def speed_over_time(arguments):
     activities = parse_activities_csv()
     rides = [activity for activity in activities if activity.activity_type == "Ride"]
@@ -242,9 +121,10 @@ def speed_over_time(arguments):
     seaborn.set_theme()
     avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe)
     avg_plot.set(xlabel="Time", ylabel="Speed (miles / hour)")
-    
     plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.bin_speed.values)
-    plt.savefig("speed.png")
+
+    pathlib.Path("plot").mkdir(exist_ok=True)
+    plt.savefig(os.path.join("plot", "speed.png"))
     plt.show()
 
 
@@ -417,31 +297,6 @@ def dump(arguments):
         print("Elevation Gain: {} feet".format(round(activity.elevation_gain, 2)))
         print("Average Speed: {} mph".format(round(activity.average_speed, 2)))
         print("\n")
-
-
-def parse_activities_csv():
-    activities = []
-    with open("export/activities.csv", "r") as activities_file:
-        activities_reader = csv.DictReader(activities_file)
-        for activity_record in activities_reader:
-            activities.append(create_activity(activity_record))
-    return activities
-
-
-def parse_activities_json():
-    activities = []
-    with open("activities.json", "r") as activities_file:
-        activities = json.load(activities_file)
-    print("Retrieved {} activities".format(len(activities)))
-
-    for activity in activities:
-        print("{} -> {} total meters, {} moving seconds, {} elevation meters".format(
-            activity["name"], activity["distance"], activity["moving_time"], activity["total_elevation_gain"]))
-
-
-def the_cooler_dump(obj):
-    for attr in dir(obj):
-        print("obj.%s = %r" % (attr, getattr(obj, attr)))
 
 
 if __name__ == '__main__':
