@@ -91,5 +91,7 @@ def elevation_over_time(arguments):
         x="datetime", y="elevation", data=elevation_dataframe)
     elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
     plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
-    plt.savefig("elevation.png")
+
+    pathlib.Path("plot").mkdir(exist_ok=True)
+    plt.savefig(os.path.join("plot", "elevation.png"))
     plt.show()
