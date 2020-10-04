@@ -5,6 +5,7 @@ export.zip
 *.svg
 activities.json
 .DS_Store
+report/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

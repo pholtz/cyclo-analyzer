@@ -52,8 +52,10 @@ def speed_over_time(arguments):
     plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.bin_speed.values)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "speed.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "speed.svg"))
+    
+    if arguments.show:
+        plt.show()
 
 
 def elevation_over_time(arguments):
@@ -93,5 +95,7 @@ def elevation_over_time(arguments):
     plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "elevation.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "elevation.svg"))
+    
+    if arguments.show:
+        plt.show()

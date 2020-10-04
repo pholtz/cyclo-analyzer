@@ -33,8 +33,10 @@ def average_distance_over_weekday(arguments):
     adow_plot.set(xlabel="Day of Week", ylabel="Average Distance (miles)")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "adow.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "adow.svg"))
+    
+    if arguments.show:
+        plt.show()
 
 
 def elevation_time_speed(arguments):
@@ -55,8 +57,10 @@ def elevation_time_speed(arguments):
     ets_plot = seaborn.heatmap(ets_pivot, annot=True, linewidths=0.5, ax=ax)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "ets.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "ets.svg"))
+    
+    if arguments.show:
+        plt.show()
 
 
 def average_speed_over_activities(arguments):
@@ -75,8 +79,10 @@ def average_speed_over_activities(arguments):
     plt.fill_between(asot_df.activity_date.values, asot_df.average_speed.values)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "asot.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "asot.svg"))
+    
+    if arguments.show:
+        plt.show()
 
 
 def distance_over_time(arguments):
@@ -97,8 +103,10 @@ def distance_over_time(arguments):
     dot_plot.set(xlabel="Moving Time (Minutes)", ylabel="Distance (Miles)")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "dot.png"))
-    plt.show()
+    plt.savefig(os.path.join("plot", "dot.svg"))
+
+    if arguments.show:
+        plt.show()
 
 
 def distance_histogram(arguments):
@@ -116,7 +124,9 @@ def distance_histogram(arguments):
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "dhist.svg"))
-    plt.show()
+    
+    if arguments.show:
+        plt.show()
 
 
 def moving_time_histogram(arguments):
@@ -134,4 +144,6 @@ def moving_time_histogram(arguments):
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "thist.svg"))
-    plt.show()
+    
+    if arguments.show:
+        plt.show()
