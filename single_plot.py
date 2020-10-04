@@ -9,23 +9,12 @@ import pandas as pd
 import seaborn
 import matplotlib.pyplot as plt
 from activity import Activity, create_activity, parse_activities_csv
+from crunch import select_activity
 
 def speed_over_time(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
-
-    selected_activity = rides[0]
-    if arguments.date:
-        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
-        for ride in rides:
-            if desired_datetime.year == ride.date.year and \
-                    desired_datetime.month == ride.date.month and \
-                    desired_datetime.day == ride.date.day:
-                selected_activity = activity
-                break
-
-    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
+    rides = parse_activities_csv(type_filter="Ride")
+    selected_activity = select_activity(rides, arguments.date)
+    
     with open("export/" + selected_activity.filename, "r") as gpx_file:
         gpx = gpxpy.parse(gpx_file)
 
@@ -59,21 +48,9 @@ def speed_over_time(arguments):
 
 
 def elevation_over_time(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
+    rides = parse_activities_csv(type_filter="Ride")
+    selected_activity = select_activity(rides, arguments.date)
 
-    selected_activity = rides[0]
-    if arguments.date:
-        desired_datetime = datetime.datetime.fromisoformat(arguments.date)
-        for ride in rides:
-            if desired_datetime.year == ride.date.year and \
-                    desired_datetime.month == ride.date.month and \
-                    desired_datetime.day == ride.date.day:
-                selected_activity = ride
-                break
-
-    print("Selected activity {} on {}".format(selected_activity.name, selected_activity.date))
     with open("export/" + selected_activity.filename, "r") as gpx_file:
         gpx = gpxpy.parse(gpx_file)
 

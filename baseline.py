@@ -8,9 +8,7 @@ import textwrap
 from activity import Activity, create_activity, parse_activities_csv
 
 def stats(arguments):
-    activities = parse_activities_csv()
-    rides = [activity for activity in activities if activity.activity_type == "Ride"]
-    rides = [ride.convert_to_imperial() for ride in rides]
+    rides = parse_activities_csv(type_filter="Ride")
 
     current_datetime = datetime.datetime.now()
     first_datetime = rides[0].date
