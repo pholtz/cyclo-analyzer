@@ -1,8 +1,89 @@
 <html>
+	<head>
+		<style>
+			h1 {
+				font-family: Georgia, sans-serif;
+  				font-size: 5em;
+  				letter-spacing: -2px;
+			}
+
+			.metrics-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				justify-items: center;
+			}
+
+			.metrics-card {
+				box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+				transition: 0.3s;
+				width: 95%;
+				height: 95%;
+			}
+
+			.metrics-card:hover {
+				box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+			}
+
+			.metrics-container {
+				padding: 2px 16px;
+			}
+
+			.plot-grid {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.title {
+				text-align: center;
+			}
+		</style>
+	</head>
 	<body>
 		<h1>{{name}}</h1>
-		<p>{{date}}</p>
-		{{speed_plot | safe}}
-		{{elevation_plot | safe}}
+		<h2>{{date}}</h2>
+		<div class="metrics-grid">
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Top Speed</h3>
+					<p>{{"%0.2f" % top_speed}} mph</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Average Speed</h3>
+					<p>{{"%0.2f" % average_speed}} mph</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Elevation Gain</h3>
+					<p>{{"%0.2f" % elevation_gain}} feet</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Moving Time</h3>
+					<p>{{"%0.2f" % moving_time}} minutes</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Distance</h3>
+					<p>{{"%0.2f" % distance}} miles</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Average Grade</h3>
+					<p>{{"%0.2f" % average_grade}} ??</p>
+				</div>
+			</div>
+		</div>
+		<div class="plot-grid">
+			<h2 class="title">Speed over Time</h2>
+			<h2 class="title">Elevation over Time</h2>
+			<div>{{speed_plot | safe}}</div>
+			<div>{{elevation_plot | safe}}</div>
+		</div>
 	</body>
 </html>

@@ -10,6 +10,7 @@ import pathlib
 import matplotlib.pyplot as plt
 from jinja2 import Environment, PackageLoader, select_autoescape
 from activity import Activity, create_activity, parse_activities_csv
+from crunch import select_activity
 import single_plot
 import multi_plot
 
@@ -18,6 +19,9 @@ def generate_single_report(arguments):
 		loader=PackageLoader("cycloanalyzer", "template"),
 		autoescape=select_autoescape(["html", "xml"]))
 	template = env.get_template("single-report.html")
+
+	activities = parse_activities_csv()
+	selected_activity = select_activity(activities, iso_date=arguments.date)
 
 	arguments.show = False
 	single_plot.speed_over_time(arguments)
@@ -32,6 +36,14 @@ def generate_single_report(arguments):
 		elevation_svg = elevation_file.read()
 
 	model = {
+		"name": selected_activity.name,
+		"date": selected_activity.date,
+		"top_speed": selected_activity.max_speed,
+		"average_speed": selected_activity.average_speed,
+		"elevation_gain": selected_activity.elevation_gain,
+		"moving_time": selected_activity.moving_time / 60,
+		"distance": selected_activity.distance,
+		"average_grade": selected_activity.average_grade,
 		"speed_plot": speed_svg,
 		"elevation_plot": elevation_svg
 	}
