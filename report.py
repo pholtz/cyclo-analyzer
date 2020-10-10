@@ -27,6 +27,10 @@ def generate_single_report(arguments):
 	single_plot.speed_over_time(arguments)
 	single_plot.elevation_over_time(arguments)
 
+	latlong_svg = None
+	with open(os.path.join("plot", "latlong.svg"), "r") as latlong_file:
+		latlong_svg = latlong_file.read()
+
 	speed_svg = None
 	with open(os.path.join("plot", "speed.svg"), "r") as speed_file:
 		speed_svg = speed_file.read()
@@ -44,6 +48,7 @@ def generate_single_report(arguments):
 		"moving_time": selected_activity.moving_time / 60,
 		"distance": selected_activity.distance,
 		"average_grade": selected_activity.average_grade,
+		"latlong_plot": latlong_svg,
 		"speed_plot": speed_svg,
 		"elevation_plot": elevation_svg
 	}

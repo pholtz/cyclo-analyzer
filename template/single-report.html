@@ -3,8 +3,13 @@
 		<style>
 			h1 {
 				font-family: Georgia, sans-serif;
-  				font-size: 5em;
-  				letter-spacing: -2px;
+  				font-size: 2em;
+  				letter-spacing: -1px;
+			}
+
+			.title-grid {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
 			}
 
 			.metrics-grid {
@@ -50,8 +55,15 @@
 		</style>
 	</head>
 	<body>
-		<h1>{{name}}</h1>
-		<h2>{{date.strftime("%c")}}</h2>
+		<div class="title-grid">
+			<div class="title-container">
+				<h1>{{name}}</h1>
+				<h2>{{date.strftime("%c")}}</h2>
+			</div>
+			<div class="title-container">
+				{{latlong_plot | safe}}
+			</div>
+		</div>
 		<div class="metrics-grid">
 			<div class="metrics-card">
 				<div class="metrics-container">

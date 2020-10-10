@@ -23,16 +23,21 @@ def latlong(arguments):
     for track in gpx.tracks:
         for segment in track.segments:
             for index, point in enumerate(segment.points):
-                trackpoints.append((point.latitude, point.longitude))
+                time = datetime.datetime.fromisoformat(point.time.isoformat())
+                trackpoints.append((time, point.latitude, point.longitude, point.elevation))
 
     latlong_dataframe = pd.DataFrame(data={
-        "latitude": [point[0] for point in trackpoints],
-        "longitude": [point[1] for point in trackpoints]
+        "time": [point[0] for point in trackpoints],
+        "latitude": [point[1] for point in trackpoints],
+        "longitude": [point[2] for point in trackpoints],
+        "elevation": [point[3] for point in trackpoints]
     })
 
-    seaborn.set_theme()
-    latlong_plot = seaborn.lineplot(x="latitude", y="longitude", data=latlong_dataframe)
-    latlong_plot.set(xlabel="Latitude", ylabel="Longitude")
+    plt.clf()
+    seaborn.set_theme(context="paper", style="white")
+    seaborn.despine()
+    latlong_plot = seaborn.lineplot(x="latitude", y="longitude", data=latlong_dataframe,
+        sort=False, estimator=None, ci=None)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "latlong.svg"))
@@ -65,6 +70,7 @@ def speed_over_time(arguments):
     })
     speed_dataframe["bin_speed"] = speed_dataframe.rolling(window=15).mean()
 
+    plt.clf()
     seaborn.set_theme()
     avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe)
     avg_plot.set(xlabel="Time", ylabel="Speed (miles / hour)")
@@ -96,10 +102,12 @@ def elevation_over_time(arguments):
         "elevation": [point[1] for point in trackpoints]
     })
 
+    plt.clf()
     seaborn.set_theme()
     elevation_plot = seaborn.lineplot(
         x="datetime", y="elevation", data=elevation_dataframe)
     elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
+    elevation_plot.axes.set_ylim(elevation_dataframe.elevation.min(), elevation_dataframe.elevation.max())
     plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
     plt.title("Elevation over Time")
 
