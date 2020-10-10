@@ -50,6 +50,12 @@ def main():
     speed_command.add_argument("--show", action="store_true", help="use matplotlib to display plot")
     speed_command.set_defaults(func=single_plot.speed_over_time)
 
+    latlong_command = subparsers.add_parser("latlong",
+        help="Plot latitude / longitude of segments without any reference points")
+    latlong_command.add_argument("--date", help="search and report activities on this date (yyyy-mm-dd)")
+    latlong_command.add_argument("--show", action="store_true", help="use matplotlib to display plot")
+    latlong_command.set_defaults(func=single_plot.latlong)
+
     ### Aggregated Activity Plots ###
     dot_command = subparsers.add_parser("dot",
         help="Plot distance as a function of moving time (scatter)")

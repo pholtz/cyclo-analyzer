@@ -11,6 +11,36 @@ import matplotlib.pyplot as plt
 from activity import Activity, create_activity, parse_activities_csv
 from crunch import select_activity
 
+def latlong(arguments):
+    """Plot an abstract plot of latitude/longitude scraped from the gpx data."""
+    rides = parse_activities_csv(type_filter="Ride")
+    selected_activity = select_activity(rides, arguments.date)
+
+    with open("export/" + selected_activity.filename, "r") as gpx_file:
+        gpx = gpxpy.parse(gpx_file)
+
+    trackpoints = []
+    for track in gpx.tracks:
+        for segment in track.segments:
+            for index, point in enumerate(segment.points):
+                trackpoints.append((point.latitude, point.longitude))
+
+    latlong_dataframe = pd.DataFrame(data={
+        "latitude": [point[0] for point in trackpoints],
+        "longitude": [point[1] for point in trackpoints]
+    })
+
+    seaborn.set_theme()
+    latlong_plot = seaborn.lineplot(x="latitude", y="longitude", data=latlong_dataframe)
+    latlong_plot.set(xlabel="Latitude", ylabel="Longitude")
+
+    pathlib.Path("plot").mkdir(exist_ok=True)
+    plt.savefig(os.path.join("plot", "latlong.svg"))
+
+    if arguments.show:
+        plt.show()
+
+
 def speed_over_time(arguments):
     rides = parse_activities_csv(type_filter="Ride")
     selected_activity = select_activity(rides, arguments.date)
@@ -39,6 +69,7 @@ def speed_over_time(arguments):
     avg_plot = seaborn.lineplot(x="datetime", y="bin_speed", data=speed_dataframe)
     avg_plot.set(xlabel="Time", ylabel="Speed (miles / hour)")
     plt.fill_between(speed_dataframe.datetime.values, speed_dataframe.bin_speed.values)
+    plt.title("Speed over Time")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "speed.svg"))
@@ -70,6 +101,7 @@ def elevation_over_time(arguments):
         x="datetime", y="elevation", data=elevation_dataframe)
     elevation_plot.set(xlabel="Time", ylabel="Elevation (meters)")
     plt.fill_between(elevation_dataframe.datetime.values, elevation_dataframe.elevation.values)
+    plt.title("Elevation over Time")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "elevation.svg"))
