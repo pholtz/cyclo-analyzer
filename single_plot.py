@@ -38,6 +38,7 @@ def latlong(arguments):
     seaborn.despine()
     latlong_plot = seaborn.lineplot(x="latitude", y="longitude", data=latlong_dataframe,
         sort=False, estimator=None, ci=None)
+    latlong_plot.set(xlabel="", ylabel="")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "latlong.svg"))

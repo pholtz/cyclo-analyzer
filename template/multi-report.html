@@ -1,6 +1,75 @@
 <html>
+	<head>
+		<style>
+			h1 {
+				font-family: Georgia, sans-serif;
+  				font-size: 2em;
+  				letter-spacing: -1px;
+			}
+
+			.metrics-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				justify-items: center;
+			}
+
+			.metrics-card {
+				box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+				transition: 0.3s;
+				width: 95%;
+				height: 95%;
+			}
+
+			.metrics-card:hover {
+				box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+			}
+
+			.metrics-container {
+				padding: 2px 16px;
+			}
+		</style>
+	</head>
 	<body>
-		<p>Test: {{ test }}</p>
-		<p>Name: {{ name | safe }}</p>
+		<h1>All Time Ride Summary</h1>
+		<h2>{{first_datetime}} - {{last_datetime}}</h2>
+		<div class="metrics-grid">
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Rides</h3>
+					<p>{{total_ride_count}} rides</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Time</h3>
+					<p>{{total_ride_time}} hours</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Distance</h3>
+					<p>{{total_ride_distance}} miles</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Average Rides per Week</h3>
+					<p>{{weekly_ride_average}} rides</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Average Time per Week</h3>
+					<p>{{weekly_time_average}} minutes</p>
+				</div>
+			</div>
+			<div class="metrics-card">
+				<div class="metrics-container">
+					<h3>Average Distance per Week</h3>
+					<p>{{weekly_distance_average}} miles</p>
+				</div>
+			</div>
+		</div>
+		<div>{{adow_plot | safe}}</div>
 	</body>
 </html>

@@ -10,7 +10,7 @@ import pathlib
 import matplotlib.pyplot as plt
 from jinja2 import Environment, PackageLoader, select_autoescape
 from activity import Activity, create_activity, parse_activities_csv
-from crunch import select_activity
+import crunch
 import single_plot
 import multi_plot
 
@@ -21,7 +21,7 @@ def generate_single_report(arguments):
 	template = env.get_template("single-report.html")
 
 	activities = parse_activities_csv()
-	selected_activity = select_activity(activities, iso_date=arguments.date)
+	selected_activity = crunch.select_activity(activities, iso_date=arguments.date)
 
 	arguments.show = False
 	single_plot.speed_over_time(arguments)
@@ -65,6 +65,14 @@ def generate_aggregate_report(arguments):
 	)
 	template = env.get_template("multi-report.html")
 
+	rides = parse_activities_csv(type_filter="Ride")
+	
+	first_datetime = rides[0].date
+	last_datetime = rides[-1].date
+
+	weekly_metrics = crunch.crunch_weekly_metrics(rides)
+	total_metrics = crunch.crunch_total_metrics(rides)
+
 	arguments.show = False
 	multi_plot.average_distance_over_weekday(arguments)
 	
@@ -73,8 +81,15 @@ def generate_aggregate_report(arguments):
 		adow_svg = adow_file.read()
 	
 	model = {
-		"test": "Test",
-		"name": adow_svg
+		"first_datetime": first_datetime,
+		"last_datetime": last_datetime,
+		"total_ride_count": total_metrics[0],
+		"total_ride_time": total_metrics[1],
+		"total_ride_distance": total_metrics[2],
+		"weekly_ride_average": weekly_metrics[0],
+		"weekly_time_average": weekly_metrics[1],
+		"weekly_distance_average": weekly_metrics[2],
+		"adow_plot": adow_svg
 	}
 
 	pathlib.Path("report").mkdir(exist_ok=True)
