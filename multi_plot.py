@@ -27,6 +27,7 @@ def average_distance_over_weekday(arguments):
         "distances": average_distances
     })
     
+    plt.clf()
     seaborn.set_theme()
     adow_plot = seaborn.barplot(x="weekday", y="distances", data=adow_df)
     adow_plot.set(xlabel="Day of Week", ylabel="Average Distance (miles)")
@@ -47,6 +48,7 @@ def elevation_time_speed(arguments):
         "average_speed": [float(activity.average_speed) * 2.237 if activity.average_speed else 0 for activity in rides]
     })
 
+    plt.clf()
     seaborn.set_theme()
     ets_pivot = pd.pivot_table(ets_df, index="elevation", columns="moving_time", values="average_speed", aggfunc=np.average)
     f, ax = plt.subplots(figsize=(9, 6))
@@ -67,6 +69,7 @@ def average_speed_over_activities(arguments):
         "average_speed": [activity.average_speed if activity.average_speed else 0 for activity in rides]
     })
 
+    plt.clf()
     seaborn.set_theme()
     asot_plot = seaborn.lineplot(x="activity_date", y="average_speed", data=asot_df)
     asot_plot.set(xlabel="Date", ylabel="Average Speed (mph)")
@@ -89,6 +92,7 @@ def distance_over_time(arguments):
         "average_speed": [ride.average_speed for ride in rides]
     }
 
+    plt.clf()
     seaborn.set_theme()
     dot_df = pd.DataFrame(data=dot_by_id)
     dot_plot = seaborn.lmplot(x="moving_time", y="distance", data=dot_df)
@@ -108,9 +112,11 @@ def distance_histogram(arguments):
         "distance": [ride.distance for ride in rides]
     })
     
+    plt.clf()
     seaborn.set_theme()
     distance_plot = seaborn.displot(distance_df, x="distance", binwidth=1)
     distance_plot.set(xlabel="Distance (miles)", ylabel="Count")
+    plt.title("Distribution of Ride Distances")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "dhist.svg"))
@@ -126,9 +132,11 @@ def moving_time_histogram(arguments):
         "moving_time": [ride.moving_time / 60 for ride in rides]
     })
 
+    plt.clf()
     seaborn.set_theme()
     time_plot = seaborn.displot(time_df, x="moving_time", binwidth=5)
     time_plot.set(xlabel="Moving Time (minutes)", ylabel="Count")
+    plt.title("Distribution of Ride Times")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "thist.svg"))

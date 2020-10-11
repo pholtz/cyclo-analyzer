@@ -15,10 +15,11 @@ import single_plot
 import multi_plot
 
 def generate_single_report(arguments):
-	env = Environment(
+	environment = Environment(
 		loader=PackageLoader("cycloanalyzer", "template"),
 		autoescape=select_autoescape(["html", "xml"]))
-	template = env.get_template("single-report.html")
+	environment.filters["format_number"] = format_number
+	template = environment.get_template("single-report.html")
 
 	activities = parse_activities_csv()
 	selected_activity = crunch.select_activity(activities, iso_date=arguments.date)
@@ -59,11 +60,12 @@ def generate_single_report(arguments):
 
 
 def generate_aggregate_report(arguments):
-	env = Environment(
+	environment = Environment(
 		loader=PackageLoader("cycloanalyzer", "template"),
 		autoescape=select_autoescape(["html", "xml"])
 	)
-	template = env.get_template("multi-report.html")
+	environment.filters["format_number"] = format_number
+	template = environment.get_template("multi-report.html")
 
 	rides = parse_activities_csv(type_filter="Ride")
 	
@@ -71,14 +73,28 @@ def generate_aggregate_report(arguments):
 	last_datetime = rides[-1].date
 
 	weekly_metrics = crunch.crunch_weekly_metrics(rides)
+	ytd_metrics = crunch.crunch_year_to_date_metrics(rides)
 	total_metrics = crunch.crunch_total_metrics(rides)
 
 	arguments.show = False
 	multi_plot.average_distance_over_weekday(arguments)
+	multi_plot.distance_over_time(arguments)
 	
 	adow_svg = None
 	with open(os.path.join("plot", "adow.svg"), "r") as adow_file:
 		adow_svg = adow_file.read()
+
+	dot_svg = None
+	with open(os.path.join("plot", "dot.svg"), "r") as dot_file:
+		dot_svg = dot_file.read()
+
+	dhist_svg = None
+	with open(os.path.join("plot", "dhist.svg"), "r") as dhist_file:
+		dhist_svg = dhist_file.read()
+
+	thist_svg = None
+	with open(os.path.join("plot", "thist.svg"), "r") as thist_file:
+		thist_svg = thist_file.read()
 	
 	model = {
 		"first_datetime": first_datetime,
@@ -86,12 +102,25 @@ def generate_aggregate_report(arguments):
 		"total_ride_count": total_metrics[0],
 		"total_ride_time": total_metrics[1],
 		"total_ride_distance": total_metrics[2],
+		"total_ride_elevation": total_metrics[3],
+		"ytd_ride_count": ytd_metrics[0],
+		"ytd_ride_time": ytd_metrics[1],
+		"ytd_ride_distance": ytd_metrics[2],
+		"ytd_ride_elevation": ytd_metrics[3],
 		"weekly_ride_average": weekly_metrics[0],
 		"weekly_time_average": weekly_metrics[1],
 		"weekly_distance_average": weekly_metrics[2],
-		"adow_plot": adow_svg
+		"weekly_elevation_average": weekly_metrics[3],
+		"adow_plot": adow_svg,
+		"dot_plot": dot_svg,
+		"dhist_plot": dhist_svg,
+		"thist_plot": thist_svg
 	}
 
 	pathlib.Path("report").mkdir(exist_ok=True)
 	with open(os.path.join("report", "multi-report.html"), "w") as report_file:
 		report_file.write(template.render(model))
+
+
+def format_number(value):
+	return f"{round(value, 2):n}"

@@ -10,8 +10,10 @@ import single_plot
 import multi_plot
 import transform
 import report
+import locale
 
 def main():
+    locale.setlocale(locale.LC_ALL, '')
     parser = argparse.ArgumentParser(description=textwrap.dedent(
         """\
         Analyze a provided activities archive.

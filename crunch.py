@@ -30,6 +30,7 @@ def select_activity(activities, iso_date=None):
 
 
 def crunch_total_metrics(rides):
+    """Given activities, calculate and return several all time aggregations."""
     total_distance = 0
     total_elevation = 0
     total_time = 0
@@ -39,26 +40,44 @@ def crunch_total_metrics(rides):
         total_elevation += ride.elevation_gain
         total_time += ride.moving_time
 
-    total_distance = round(total_distance, 2)
-    total_elevation = round(total_elevation, 2)
-    total_time_hours = round(total_time / 3600, 2)
-    return (len(rides), total_time_hours, total_distance, total_elevation)
+    return (len(rides), total_time / 3600, total_distance, total_elevation)
+
+
+def crunch_year_to_date_metrics(rides):
+    """Given activities, calculate and return several year to date aggregations."""
+    current_datetime = datetime.datetime.now()
+    ytd_rides = 0
+    ytd_distance = 0
+    ytd_elevation = 0
+    ytd_time = 0
+
+    for ride in rides:
+        if ride.date.year == current_datetime.year:
+            ytd_rides += 1
+            ytd_distance += ride.distance
+            ytd_elevation += ride.elevation_gain
+            ytd_time += ride.moving_time
+
+    return (ytd_rides, ytd_time / 3600, ytd_distance, ytd_elevation)
 
 
 def crunch_weekly_metrics(rides):
-    """Given activities, calculate and return several "by week" averages."""
+    """Given activities, calculate and return several week-based averages."""
     ride_names = [ride.name for ride in rides]
     ride_dates = [ride.date for ride in rides]
     ride_moving_times = [ride.moving_time for ride in rides]
     ride_distances = [ride.distance for ride in rides]
+    ride_elevations = [ride.elevation_gain for ride in rides]
     date_df = pd.DataFrame(data={
         "name": ride_names,
         "date": ride_dates,
         "moving_time": ride_moving_times,
-        "distance": ride_distances
+        "distance": ride_distances,
+        "elevation": ride_elevations
     })
     rides_by_week = date_df.groupby(pd.Grouper(key="date", freq="W"))
-    average_rides_per_week = round(statistics.mean([len(weekly_rides[1]) for weekly_rides in rides_by_week]), 2)
-    average_time_per_week = round(statistics.mean([sum(weekly_rides[1]["moving_time"] / 60) for weekly_rides in rides_by_week]), 2)
-    average_distance_per_week = round(statistics.mean([sum(weekly_rides[1]["distance"]) for weekly_rides in rides_by_week]), 2)
-    return (average_rides_per_week, average_time_per_week, average_distance_per_week)
+    average_rides_per_week = statistics.mean([len(weekly_rides[1]) for weekly_rides in rides_by_week])
+    average_time_per_week = statistics.mean([sum(weekly_rides[1]["moving_time"] / 60) for weekly_rides in rides_by_week])
+    average_distance_per_week = statistics.mean([sum(weekly_rides[1]["distance"]) for weekly_rides in rides_by_week])
+    average_elevation_per_week = statistics.mean([sum(weekly_rides[1]["elevation"]) for weekly_rides in rides_by_week])
+    return (average_rides_per_week, average_time_per_week, average_distance_per_week, average_elevation_per_week)
