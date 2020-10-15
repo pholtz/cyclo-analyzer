@@ -18,7 +18,7 @@ def average_distance_over_weekday(arguments):
     weekdays_by_index = dict(zip(range(7), calendar.day_name))
     distances_by_index = dict(zip(range(7), [[] for x in range(7)]))
     for activity in rides:
-        distances_by_index[activity.date.weekday()].append(float(activity.distance) * 0.000621371)
+        distances_by_index[activity.date.weekday()].append(activity.distance)
 
     average_distances = [statistics.mean(weekday_distances) for index, weekday_distances in distances_by_index.items()]
 

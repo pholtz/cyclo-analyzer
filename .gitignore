@@ -1,6 +1,6 @@
 # Custom
 export/
-export.zip
+*.zip
 *.png
 *.svg
 activities.json
