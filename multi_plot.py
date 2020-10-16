@@ -12,6 +12,31 @@ import seaborn
 import matplotlib.pyplot as plt
 from activity import Activity, create_activity, parse_activities_csv, build_activity_dataframe
 
+def ride_heatmap(arguments):
+    rides = parse_activities_csv(type_filter="Ride")
+
+    current_datetime = datetime.datetime.now()
+    rides = [ride for ride in rides if ride.date.year == current_datetime.year]
+
+    ride_df = pd.DataFrame(data={
+        "month": [ride.date.month for ride in rides],
+        "day": [ride.date.day for ride in rides],
+        "distance": [ride.distance for ride in rides]
+    })
+    result = ride_df.pivot(index="month", columns="day", values="distance")
+
+    plt.clf()
+    seaborn.set_theme()
+    ride_plot = seaborn.heatmap(result, linewidths=0.25,
+        cbar_kws={"orientation": "horizontal"})
+
+    pathlib.Path("plot").mkdir(exist_ok=True)
+    plt.savefig(os.path.join("plot", "ride_heatmap.svg"))
+
+    if arguments.show:
+        plt.show()
+
+
 def average_distance_over_weekday(arguments):
     rides = parse_activities_csv(type_filter="Ride")
 
