@@ -18,17 +18,28 @@ def ride_heatmap(arguments):
     current_datetime = datetime.datetime.now()
     rides = [ride for ride in rides if ride.date.year == current_datetime.year]
 
-    ride_df = pd.DataFrame(data={
-        "month": [ride.date.month for ride in rides],
-        "day": [ride.date.day for ride in rides],
+    weekday_df = pd.DataFrame(data={
+        "weekday": [ride.date.weekday() for ride in rides],
+        "week_of_year": [ride.date.strftime("%U") for ride in rides],
         "distance": [ride.distance for ride in rides]
     })
-    result = ride_df.pivot(index="month", columns="day", values="distance")
+    weekday_pivot = weekday_df.pivot(index="weekday", columns="week_of_year", values="distance")
 
     plt.clf()
     seaborn.set_theme()
-    ride_plot = seaborn.heatmap(result, linewidths=0.25,
-        cbar_kws={"orientation": "horizontal"})
+    # ride_plot = seaborn.heatmap(weekday_pivot,
+    #     linewidths=0.75,
+    #     cbar_kws={"orientation": "horizontal"})
+    
+    # figure, axes = plt.subplots()
+    grid_kws = {"height_ratios": (.9, .05), "hspace": .3}
+    f, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
+    ax = seaborn.heatmap(weekday_pivot,
+        ax=ax,
+        cbar_ax=cbar_ax,
+        linewidths=1.0,
+        cbar_kws={"orientation": "horizontal"},
+        square=True)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "ride_heatmap.svg"))
