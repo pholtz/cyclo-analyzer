@@ -4,6 +4,25 @@
 import csv
 import datetime
 import pandas as pd
+import pathlib
+
+def source_input_directory(user_filepath):
+    if user_filepath is None:
+        return "export"
+
+    path = lib.Path(user_filepath)
+    if not path.exists():
+        raise RuntimeError("Specified path {} does not exist".format(user_filepath))
+
+    if path.is_dir():
+        return user_filepath
+
+    if path.is_file():
+        if user_filepath.endswith(".zip"):
+            print("unzip file")
+        else:
+            raise RuntimeError("Specified path {} is a file, but not an archive".format(user_filepath))
+
 
 def build_activity_dataframe(imperial=True, type_filter=None):
     activities = parse_activities_csv(imperial, type_filter)

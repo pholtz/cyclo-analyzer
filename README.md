@@ -8,6 +8,8 @@ Invoking the below command with no arguments or `-h` supplied will yield a list 
 $ python cycloanalyzer.py
 ```
 
+In order to operate, the program requires the activity data to be present on disk in one of the accepted formats. By default, the program searches for an archive or directory in the current working directory named `export` (or `export.zip`, etc.). An alternate name may be supplied through the `-input` argument.
+
 Broadly speaking, the subcommands can be divided into 4 categories.
 
 ### Reports

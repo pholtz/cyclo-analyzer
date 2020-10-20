@@ -19,6 +19,8 @@ def main():
         Analyze a provided activities archive.
         Note: Currently supports only strava activity extracts. 
         """))
+    parser.add_argument("-input",
+        help="Specify the location of the desired extract directory, or archive")
     subparsers = parser.add_subparsers(title="reports",
         description="available reports",
         help="")
