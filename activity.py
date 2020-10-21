@@ -1,16 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import csv
 import datetime
 import pandas as pd
 import pathlib
+import zipfile
+
+def extract_activities(user_filepath, imperial=True, type_filter=None):
+    """Source, extract, and parse a given activity archive."""
+    extracted_filepath = source_input_directory(user_filepath)
+    activities = parse_activities_csv(extracted_filepath, imperial, type_filter)
+    return activities
 
 def source_input_directory(user_filepath):
+    """Examine program arguments to determine the location of an archive.
+    Extract as needed.
+    """
     if user_filepath is None:
         return "export"
 
-    path = lib.Path(user_filepath)
+    path = pathlib.Path(user_filepath)
     if not path.exists():
         raise RuntimeError("Specified path {} does not exist".format(user_filepath))
 
@@ -19,9 +30,28 @@ def source_input_directory(user_filepath):
 
     if path.is_file():
         if user_filepath.endswith(".zip"):
-            print("unzip file")
+            extracted_filepath = user_filepath.replace(".zip", "")
+            with zipfile.ZipFile(user_filepath, 'r') as zip_file:
+                zip_file.extractall(extracted_filepath)
+                return extracted_filepath
         else:
             raise RuntimeError("Specified path {} is a file, but not an archive".format(user_filepath))
+
+
+def parse_activities_csv(extract_filepath, imperial=True, type_filter=None):
+    """Ingest extracted activities csv and return a list of parsed acitivty instances."""
+    activities = []
+    activities_filepath = os.path.join(extract_filepath, "activities.csv")
+    with open(activities_filepath, "r") as activities_file:
+        activities_reader = csv.DictReader(activities_file)
+        for activity_record in activities_reader:
+            activity = create_activity(activity_record) 
+            if imperial:
+                activity.convert_to_imperial()
+            if type_filter and activity.activity_type != type_filter:
+                continue
+            activities.append(activity)
+    return activities
 
 
 def build_activity_dataframe(imperial=True, type_filter=None):
@@ -46,21 +76,8 @@ def build_activity_dataframe(imperial=True, type_filter=None):
     return pd.DataFrame(data=activities_by_field)
 
 
-def parse_activities_csv(imperial=True, type_filter=None):
-    activities = []
-    with open("export/activities.csv", "r") as activities_file:
-        activities_reader = csv.DictReader(activities_file)
-        for activity_record in activities_reader:
-            activity = create_activity(activity_record) 
-            if imperial:
-                activity.convert_to_imperial()
-            if type_filter and activity.activity_type != type_filter:
-                continue
-            activities.append(activity)
-    return activities
-
-
 def create_activity(activity_record):
+    """Given a csv dictionary record, create an activity instance with typing and defaults set appropriately."""
     activity = Activity()
     activity.activity_id = activity_record["Activity ID"]
     activity.date = datetime.datetime.strptime(activity_record["Activity Date"], "%b %d, %Y, %I:%M:%S %p")

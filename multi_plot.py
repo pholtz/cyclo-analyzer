@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 import seaborn
 import matplotlib.pyplot as plt
-from activity import Activity, create_activity, parse_activities_csv, build_activity_dataframe
+from activity import Activity, create_activity, parse_activities_csv, build_activity_dataframe, extract_activities
 
 def ride_heatmap(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     current_datetime = datetime.datetime.now()
     rides = [ride for ride in rides if ride.date.year == current_datetime.year]
@@ -49,7 +49,7 @@ def ride_heatmap(arguments):
 
 
 def average_distance_over_weekday(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     weekdays_by_index = dict(zip(range(7), calendar.day_name))
     distances_by_index = dict(zip(range(7), [[] for x in range(7)]))
@@ -76,7 +76,7 @@ def average_distance_over_weekday(arguments):
 
 
 def elevation_time_speed(arguments):
-    activities = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     ets_df = pd.DataFrame(data={
         "elevation": [float(activity.elevation_gain) for activity in rides],
@@ -98,7 +98,7 @@ def elevation_time_speed(arguments):
 
 
 def average_speed_over_activities(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     asot_df = pd.DataFrame(data={
         "activity_date": [activity.date for activity in rides],
@@ -120,7 +120,7 @@ def average_speed_over_activities(arguments):
 
 def distance_over_time(arguments):
     """Do a basic scatterplot of distance over ride time."""
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     dot_by_id = {
         "distance": [ride.distance for ride in rides],
@@ -142,7 +142,7 @@ def distance_over_time(arguments):
 
 
 def distance_histogram(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     distance_df = pd.DataFrame(data={
         "distance": [ride.distance for ride in rides]
@@ -162,7 +162,7 @@ def distance_histogram(arguments):
 
 
 def moving_time_histogram(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     time_df = pd.DataFrame(data={
         "moving_time": [ride.moving_time / 60 for ride in rides]

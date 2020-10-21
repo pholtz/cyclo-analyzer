@@ -9,7 +9,7 @@ import seaborn
 import pathlib
 import matplotlib.pyplot as plt
 from jinja2 import Environment, PackageLoader, select_autoescape
-from activity import Activity, create_activity, parse_activities_csv
+from activity import Activity, create_activity, parse_activities_csv, extract_activities
 import crunch
 import single_plot
 import multi_plot
@@ -21,7 +21,7 @@ def generate_single_report(arguments):
 	environment.filters["format_number"] = format_number
 	template = environment.get_template("single-report.html")
 
-	activities = parse_activities_csv()
+	activities = extract_activities(arguments.input, imperial=True, type_filter=None)
 	selected_activity = crunch.select_activity(activities, iso_date=arguments.date)
 
 	arguments.show = False
@@ -67,7 +67,7 @@ def generate_aggregate_report(arguments):
 	environment.filters["format_number"] = format_number
 	template = environment.get_template("multi-report.html")
 
-	rides = parse_activities_csv(type_filter="Ride")
+	rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 	
 	first_datetime = rides[0].date
 	last_datetime = rides[-1].date

@@ -8,12 +8,12 @@ import gpxpy
 import pandas as pd
 import seaborn
 import matplotlib.pyplot as plt
-from activity import Activity, create_activity, parse_activities_csv
+from activity import Activity, create_activity, parse_activities_csv, extract_activities
 from crunch import select_activity
 
 def latlong(arguments):
     """Plot an abstract plot of latitude/longitude scraped from the gpx data."""
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
     selected_activity = select_activity(rides, arguments.date)
 
     with open("export/" + selected_activity.filename, "r") as gpx_file:
@@ -48,7 +48,7 @@ def latlong(arguments):
 
 
 def speed_over_time(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
     selected_activity = select_activity(rides, arguments.date)
     
     with open("export/" + selected_activity.filename, "r") as gpx_file:
@@ -86,7 +86,7 @@ def speed_over_time(arguments):
 
 
 def elevation_over_time(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
     selected_activity = select_activity(rides, arguments.date)
 
     with open("export/" + selected_activity.filename, "r") as gpx_file:

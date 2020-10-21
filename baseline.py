@@ -5,10 +5,10 @@ import datetime
 import pandas as pd
 import statistics
 import textwrap
-from activity import Activity, create_activity, parse_activities_csv
+from activity import Activity, create_activity, parse_activities_csv, extract_activities
 
 def stats(arguments):
-    rides = parse_activities_csv(type_filter="Ride")
+    rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     current_datetime = datetime.datetime.now()
     first_datetime = rides[0].date
