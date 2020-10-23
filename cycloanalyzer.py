@@ -76,10 +76,10 @@ def main():
     ets_command.add_argument("--show", action="store_true", help="use matplotlib to display plot")
     ets_command.set_defaults(func=multi_plot.elevation_time_speed)
 
-    ride_command = subparsers.add_parser("ride",
+    ride_command = subparsers.add_parser("heatmap",
         help="Plot ride activity heatmap for the calendar year")
     ride_command.add_argument("--show", action="store_true", help="use matplotlib to display plot")
-    ride_command.set_defaults(func=multi_plot.ride_heatmap)
+    ride_command.set_defaults(func=multi_plot.heatmap)
 
     adow_command = subparsers.add_parser("adow",
         help="Plot average distances for each day of the week (bar)")

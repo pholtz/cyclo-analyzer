@@ -12,7 +12,7 @@ import seaborn
 import matplotlib.pyplot as plt
 from activity import Activity, create_activity, parse_activities_csv, build_activity_dataframe, extract_activities
 
-def ride_heatmap(arguments):
+def heatmap(arguments):
     rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
 
     current_datetime = datetime.datetime.now()
@@ -27,6 +27,7 @@ def ride_heatmap(arguments):
 
     plt.clf()
     seaborn.set_theme()
+    palette = seaborn.color_palette("crest", as_cmap=True)
     # ride_plot = seaborn.heatmap(weekday_pivot,
     #     linewidths=0.75,
     #     cbar_kws={"orientation": "horizontal"})
@@ -39,10 +40,11 @@ def ride_heatmap(arguments):
         cbar_ax=cbar_ax,
         linewidths=1.0,
         cbar_kws={"orientation": "horizontal"},
-        square=True)
+        square=True,
+        cmap=palette)
 
     pathlib.Path("plot").mkdir(exist_ok=True)
-    plt.savefig(os.path.join("plot", "ride_heatmap.svg"))
+    plt.savefig(os.path.join("plot", "heatmap.svg"))
 
     if arguments.show:
         plt.show()

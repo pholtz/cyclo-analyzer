@@ -55,6 +55,14 @@
 			.metrics-container {
 				padding: 2px 16px;
 			}
+
+			.heatmap-container {
+				width: 100%;
+			}
+
+			.heatmap {
+				width: 100%;
+			}
 		</style>
 	</head>
 	<body>
@@ -136,7 +144,8 @@
 				</div>
 			</div>
 		</div>
-		<div>{{adow_plot | safe}}</div>
+		<div class="heatmap-container">{{heatmap_svg | safe}}</div>
+		<div>{{adow_plot | safe | inject_class("heatmap")}}</div>
 		<div>{{dot_plot | safe}}</div>
 		<div>{{dhist_plot | safe}}</div>
 		<div>{{thist_plot | safe}}</div>

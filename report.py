@@ -65,6 +65,7 @@ def generate_aggregate_report(arguments):
 		autoescape=select_autoescape(["html", "xml"])
 	)
 	environment.filters["format_number"] = format_number
+	environment.filters["inject_class"] = inject_class
 	template = environment.get_template("multi-report.html")
 
 	rides = extract_activities(arguments.input, imperial=True, type_filter="Ride")
@@ -77,24 +78,17 @@ def generate_aggregate_report(arguments):
 	total_metrics = crunch.crunch_total_metrics(rides)
 
 	arguments.show = False
+	multi_plot.heatmap(arguments)
 	multi_plot.average_distance_over_weekday(arguments)
 	multi_plot.distance_over_time(arguments)
+	multi_plot.distance_histogram(arguments)
+	multi_plot.moving_time_histogram(arguments)
 	
-	adow_svg = None
-	with open(os.path.join("plot", "adow.svg"), "r") as adow_file:
-		adow_svg = adow_file.read()
-
-	dot_svg = None
-	with open(os.path.join("plot", "dot.svg"), "r") as dot_file:
-		dot_svg = dot_file.read()
-
-	dhist_svg = None
-	with open(os.path.join("plot", "dhist.svg"), "r") as dhist_file:
-		dhist_svg = dhist_file.read()
-
-	thist_svg = None
-	with open(os.path.join("plot", "thist.svg"), "r") as thist_file:
-		thist_svg = thist_file.read()
+	heatmap_svg = load_plot("heatmap.svg")
+	adow_svg = load_plot("adow.svg")
+	dot_svg = load_plot("dot.svg")
+	dhist_svg = load_plot("dhist.svg")
+	thist_svg = load_plot("thist.svg")
 	
 	model = {
 		"first_datetime": first_datetime,
@@ -111,6 +105,7 @@ def generate_aggregate_report(arguments):
 		"weekly_time_average": weekly_metrics[1],
 		"weekly_distance_average": weekly_metrics[2],
 		"weekly_elevation_average": weekly_metrics[3],
+		"heatmap_svg": heatmap_svg,
 		"adow_plot": adow_svg,
 		"dot_plot": dot_svg,
 		"dhist_plot": dhist_svg,
@@ -122,5 +117,20 @@ def generate_aggregate_report(arguments):
 		report_file.write(template.render(model))
 
 
+def load_plot(plot_name):
+	svg_data = None
+	with open(os.path.join("plot", plot_name), "r") as svg_file:
+		svg_data = svg_file.read()
+	return svg_data
+
+
 def format_number(value):
 	return f"{round(value, 2):n}"
+
+
+def inject_class(value, class_name):
+	"""Given raw html, attach the provided class to the first element.
+	This method assumes a class does not already exist on the element.
+	"""
+	# TODO: Apply class name to <svg...
+	return value
