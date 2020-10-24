@@ -4,14 +4,22 @@
 			header {
 				position: relative;
 				height: 100px;
-				background-image: linear-gradient(#bdc3c7, #2c3e50);
-				border-radius: 20px;
+				background-image: linear-gradient(#076585, #ffffff);
+				/*border-radius: 20px;*/
 			}
 
 			header * {
 				/*color: #222222;*/
-				color: #eeeeee;
+				/*color: #eeeeee;*/
 				padding-left: 2vw;
+			}
+
+			.title {
+				color: #222222;
+			}
+
+			.subtitle {
+				color: #222222;
 			}
 
 			h1 {
@@ -67,8 +75,8 @@
 	</head>
 	<body>
 		<header>
-			<h1>All Time Ride Summary</h1>
-			<h2>{{first_datetime.strftime("%x")}} - {{last_datetime.strftime("%x")}}</h2>
+			<h1 class="title">All Time Ride Summary</h1>
+			<h2 class="subtitle">{{first_datetime.strftime("%x")}} - {{last_datetime.strftime("%x")}}</h2>
 		</header>
 		<div class="metrics-grid">
 			<div class="metrics-card">

@@ -28,20 +28,29 @@ def heatmap(arguments):
     plt.clf()
     seaborn.set_theme()
     palette = seaborn.color_palette("crest", as_cmap=True)
-    # ride_plot = seaborn.heatmap(weekday_pivot,
-    #     linewidths=0.75,
-    #     cbar_kws={"orientation": "horizontal"})
-    
-    # figure, axes = plt.subplots()
-    grid_kws = {"height_ratios": (.9, .05), "hspace": .3}
-    f, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
+    grid_kws = {"height_ratios": (.9, .05), "hspace": .05}
+    figure, (ax, cbar_ax) = plt.subplots(2, gridspec_kw=grid_kws)
     ax = seaborn.heatmap(weekday_pivot,
         ax=ax,
         cbar_ax=cbar_ax,
         linewidths=1.0,
         cbar_kws={"orientation": "horizontal"},
         square=True,
-        cmap=palette)
+        cmap=palette,
+        xticklabels=1,
+        yticklabels=1)
+    ax.set(xlabel=None, ylabel=None)
+
+    vertical_labels = ax.get_yticklabels()
+    for label in vertical_labels:
+        label.set_text(calendar.day_abbr[int(label.get_text())])
+    ax.set_yticklabels(vertical_labels, rotation=0, horizontalalignment="right", fontsize="x-small")
+
+    horizontal_labels = ax.get_xticklabels()
+    for label in horizontal_labels:
+        week_of_year = int(label.get_text())
+        label.set_text(None)
+    ax.set_xticklabels(horizontal_labels, rotation=0, horizontalalignment="right", fontsize="x-small")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "heatmap.svg"))
