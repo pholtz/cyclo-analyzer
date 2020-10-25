@@ -66,10 +66,34 @@
 
 			.heatmap-container {
 				width: 100%;
+				height: 100%;
 			}
 
 			.heatmap {
 				width: 100%;
+				height: 75%;
+			}
+
+			.plot-grid {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				justify-items: center;
+				width: 100%;
+				height: 100%;
+			}
+
+			.plot-container {
+				width: 100%;
+				height: 100%;
+			}
+
+			.plot-title {
+				text-align: center;
+			}
+
+			.plot {
+				width: 100%;
+				height: 100%;
 			}
 		</style>
 	</head>
@@ -152,10 +176,24 @@
 				</div>
 			</div>
 		</div>
-		<div class="heatmap-container">{{heatmap_svg | safe}}</div>
-		<div>{{adow_plot | safe | inject_class("heatmap")}}</div>
-		<div>{{dot_plot | safe}}</div>
-		<div>{{dhist_plot | safe}}</div>
-		<div>{{thist_plot | safe}}</div>
+		<div class="heatmap-container">{{heatmap_svg | inject_class("heatmap") | safe}}</div>
+		<div class="plot-grid">
+			<div class="plot-container">
+				<h3 class="plot-title">Average Distance by Weekday</h3>
+				{{adow_plot | inject_class("plot") | safe}}
+			</div>
+			<div class="plot-container">
+				<h3 class="plot-title">Distance over Time</h3>
+				{{dot_plot | inject_class("plot") | safe}}
+			</div>
+			<div class="plot-container">
+				<h3 class="plot-title">Ride Distance Distribution</h3>
+				{{dhist_plot | inject_class("plot") | safe}}
+			</div>
+			<div class="plot-container">
+				<h3 class="plot-title">Ride Time Distribution</h3>
+				{{thist_plot | inject_class("plot") | safe}}
+			</div>
+		</div>
 	</body>
 </html>

@@ -47,10 +47,18 @@ def heatmap(arguments):
     ax.set_yticklabels(vertical_labels, rotation=0, horizontalalignment="right", fontsize="x-small")
 
     horizontal_labels = ax.get_xticklabels()
+    last_label = None
     for label in horizontal_labels:
         week_of_year = int(label.get_text())
-        label.set_text(None)
-    ax.set_xticklabels(horizontal_labels, rotation=0, horizontalalignment="right", fontsize="x-small")
+        rough_datetime = datetime.datetime.strptime("{}-{}-1".format(current_datetime.year, week_of_year), "%Y-%W-%w")
+        rough_month = calendar.month_abbr[rough_datetime.month]
+        if last_label is None or last_label != rough_month:
+            label.set_text(rough_month)
+        else:
+            label.set_text(None)
+        last_label = rough_month
+    ax.set_xticklabels(horizontal_labels, rotation=45, fontsize="x-small")
+    plt.title("Daily Distances, Year to Date")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "heatmap.svg"))
@@ -161,9 +169,9 @@ def distance_histogram(arguments):
     
     plt.clf()
     seaborn.set_theme()
-    distance_plot = seaborn.displot(distance_df, x="distance", binwidth=1)
+    distance_plot = seaborn.displot(distance_df, x="distance", binwidth=2)
     distance_plot.set(xlabel="Distance (miles)", ylabel="Count")
-    plt.title("Distribution of Ride Distances")
+    # plt.title("Distribution of Ride Distances")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "dhist.svg"))
@@ -181,9 +189,9 @@ def moving_time_histogram(arguments):
 
     plt.clf()
     seaborn.set_theme()
-    time_plot = seaborn.displot(time_df, x="moving_time", binwidth=5)
+    time_plot = seaborn.displot(time_df, x="moving_time", binwidth=15)
     time_plot.set(xlabel="Moving Time (minutes)", ylabel="Count")
-    plt.title("Distribution of Ride Times")
+    # plt.title("Distribution of Ride Times")
 
     pathlib.Path("plot").mkdir(exist_ok=True)
     plt.savefig(os.path.join("plot", "thist.svg"))

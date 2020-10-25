@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
+import re
 import calendar
 import statistics
 import pandas as pd
 import seaborn
 import pathlib
 import matplotlib.pyplot as plt
+from xml.etree import ElementTree
 from jinja2 import Environment, PackageLoader, select_autoescape
 from activity import Activity, create_activity, parse_activities_csv, extract_activities
 import crunch
@@ -84,11 +87,11 @@ def generate_aggregate_report(arguments):
 	multi_plot.distance_histogram(arguments)
 	multi_plot.moving_time_histogram(arguments)
 	
-	heatmap_svg = load_plot("heatmap.svg")
-	adow_svg = load_plot("adow.svg")
-	dot_svg = load_plot("dot.svg")
-	dhist_svg = load_plot("dhist.svg")
-	thist_svg = load_plot("thist.svg")
+	heatmap_svg = remove_svg_dimensions(load_plot("heatmap.svg"))
+	adow_svg = remove_svg_dimensions(load_plot("adow.svg"))
+	dot_svg = remove_svg_dimensions(load_plot("dot.svg"))
+	dhist_svg = remove_svg_dimensions(load_plot("dhist.svg"))
+	thist_svg = remove_svg_dimensions(load_plot("thist.svg"))
 	
 	model = {
 		"first_datetime": first_datetime,
@@ -118,9 +121,27 @@ def generate_aggregate_report(arguments):
 
 
 def load_plot(plot_name):
+	"""Load an svg from the plot directory, given a filename."""
 	svg_data = None
 	with open(os.path.join("plot", plot_name), "r") as svg_file:
 		svg_data = svg_file.read()
+	return svg_data
+
+
+def remove_svg_dimensions(svg_data):
+	"""Remove explicit height and width attributes from an svg, if present."""
+	desired_index = 0
+	svg_lines = svg_data.split("\n")
+	for index, line in enumerate(svg_lines):
+		if "<svg" in line:
+			desired_index = index
+			break
+
+	line = svg_lines[desired_index]
+	line = re.sub("height=\".*?\" ", "", line)
+	line = re.sub("width=\".*?\" ", "", line)
+	svg_lines[desired_index] = line
+	svg_data = "\n".join(svg_lines)
 	return svg_data
 
 
@@ -132,5 +153,15 @@ def inject_class(value, class_name):
 	"""Given raw html, attach the provided class to the first element.
 	This method assumes a class does not already exist on the element.
 	"""
-	# TODO: Apply class name to <svg...
+	desired_index = 0
+	svg_lines = value.split("\n")
+	for index, line in enumerate(svg_lines):
+		if "<svg" in line:
+			desired_index = index
+			break
+
+	line = svg_lines[desired_index]
+	line = "<svg class=\"" + class_name + "\" " + line[5:]
+	svg_lines[desired_index] = line
+	value = "\n".join(svg_lines)
 	return value
